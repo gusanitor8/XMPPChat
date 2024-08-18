@@ -11,14 +11,18 @@ class Client(slixmpp.ClientXMPP):
     # We implement the singleton design pattern
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
-            cls._instance = super(Client, cls).__new__(cls, *args, **kwargs)
+            cls._instance = super(Client, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, jid, password, recv_msg: callable):
+    def __init__(self, jid, password, recv_msg: callable = None):
         if not hasattr(self, '_initialized'):  # To ensure __init__ is not called multiple times
             super().__init__(jid=jid, password=password)
             self.recv_msg = recv_msg
             self._initialized = True
+            self.set_handlers()
+
+    def set_recv_msg(self, recv_msg: callable):
+        self.recv_msg = recv_msg
 
     def send_message(self, mto: JID, mbody: Optional[str] = None,
                      msubject: Optional[str] = None,
@@ -56,6 +60,19 @@ class Client(slixmpp.ClientXMPP):
             return self.client_roster[jid]
         return None
 
+    def failed_auth(self):
+        self.disconnect()
+        raise ValueError
+
+    async def start(self, event):
+        print("popis")
+        self.disconnect()
+        # self.send_presence(pshow="chat", pstatus="Connected")
+        # await self.get_roster()
+        # self.is_user_connected = True
+
     def set_handlers(self):
         # Message event handler.
         self.add_event_handler("message", self.receive_message)
+        self.add_event_handler("failed_auth", self.failed_auth)
+        self.add_event_handler("session_start", self.start)

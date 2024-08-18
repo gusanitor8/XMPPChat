@@ -1,6 +1,9 @@
 import tkinter as tk
 from tkinter import messagebox
 from view.chat_window import ChatWindow
+from view.signed_menu import ChatMenu
+from src.model.client import Client
+import asyncio
 
 
 class LoginForm:
@@ -25,8 +28,6 @@ class LoginForm:
 
         # TODO: here we must add the credential validation
 
-        # We instantiate the chat window
-        chat_window = ChatWindow()
 
         # once the form is filled we don't need it anymore
         self.root.destroy()
@@ -62,6 +63,3 @@ class LoginForm:
         # Create the submit button
         submit_button = tk.Button(self.root, text="Submit", command=self.submit_form)
         submit_button.pack(pady=10)
-
-
-
