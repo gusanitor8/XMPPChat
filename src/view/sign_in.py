@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 from view.chat_window import ChatWindow
 from view.signed_menu import ChatMenu
-from src.model.client import Client
+from model.client import Client
 import asyncio
 
 
@@ -28,10 +28,9 @@ class LoginForm:
 
         # TODO: here we must add the credential validation
 
-
-        # once the form is filled we don't need it anymore
-        self.root.destroy()
-
+        client = Client(email, password)
+        client.connect(disable_starttls=True, use_ssl=False)
+        client.process(forever=False)
 
     def get_email(self) -> str:
         return self.email_entry.get()

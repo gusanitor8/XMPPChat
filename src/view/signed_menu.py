@@ -1,9 +1,10 @@
 import tkinter as tk
-from src.model.client import Client
+from view.chat_window import ChatWindow
+from tkinter import messagebox
 
 
 class ChatMenu:
-    def __init__(self, client: Client):
+    def __init__(self, client):
         self.root = tk.Tk()
         self.client = client
         self.root.title("Chat Options")
@@ -31,8 +32,25 @@ class ChatMenu:
             button.pack(pady=5, fill=tk.X, padx=10)
 
     def handle_option(self, option):
-        # Handle each menu option (to be implemented)
-        print(f"Selected option: {option}")
+        print("Option chosen: ", option)
+        if option == 0:
+            contacts = self.client.get_contacts()
+            print(contacts)
+
+        elif option == 1:
+            pass
+
+        elif option == 2:
+            pass
+
+        elif option == 3:
+            chat_window = ChatWindow(self.client)
+            chat_window.run()
+
+    def on_closing(self):
+        # Code to execute when the window is closing
+        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+            self.root.destroy()  # Closes the window
 
     def run(self):
         # Run the application

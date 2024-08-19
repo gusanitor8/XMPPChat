@@ -3,6 +3,8 @@ import slixmpp
 from slixmpp import JID
 from slixmpp.types import MessageTypes, OptJidStr
 from slixmpp.roster import RosterItem
+from view.signed_menu import ChatMenu
+from view.chat_window import ChatWindow
 
 
 class Client(slixmpp.ClientXMPP):
@@ -14,22 +16,24 @@ class Client(slixmpp.ClientXMPP):
             cls._instance = super(Client, cls).__new__(cls)
         return cls._instance
 
-    def __init__(self, jid, password, recv_msg: callable = None):
+    def __init__(self, jid, password):
         if not hasattr(self, '_initialized'):  # To ensure __init__ is not called multiple times
             super().__init__(jid=jid, password=password)
-            self.recv_msg = recv_msg
             self._initialized = True
             self.set_handlers()
+
+    async def start(self, event):
+        self.send_presence(pshow="chat", pstatus="Connected")
+        await self.get_roster()
+        self.is_user_connected = True
+        chat = ChatMenu(self)
+        chat.run()
+
 
     def set_recv_msg(self, recv_msg: callable):
         self.recv_msg = recv_msg
 
-    def send_message(self, mto: JID, mbody: Optional[str] = None,
-                     msubject: Optional[str] = None,
-                     mtype: Optional[MessageTypes] = None,
-                     mhtml: Optional[str] = None, mfrom: OptJidStr = None,
-                     mnick: Optional[str] = None):
-        pass
+
 
     async def receive_message(self, message):
         if message["type"] == "chat":
@@ -41,8 +45,17 @@ class Client(slixmpp.ClientXMPP):
                 "emitter": actual_name,
                 "body": message_body
             }
+            chat_window = ChatWindow()
+            chat_window.receive_message(msg_data)
 
-            self.recv_msg(msg_data)
+            chat_window = ChatWindow(self)
+            if not chat_window.is_running:
+                chat_window.run()
+
+            chat_window.receive_message(msg_data)
+
+
+
 
     def get_contacts(self):
         contacts = []
@@ -64,12 +77,6 @@ class Client(slixmpp.ClientXMPP):
         self.disconnect()
         raise ValueError
 
-    async def start(self, event):
-        print("popis")
-        self.disconnect()
-        # self.send_presence(pshow="chat", pstatus="Connected")
-        # await self.get_roster()
-        # self.is_user_connected = True
 
     def set_handlers(self):
         # Message event handler.
