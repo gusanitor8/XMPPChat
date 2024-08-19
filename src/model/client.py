@@ -1,10 +1,13 @@
 from typing import Optional
+
+import asyncio
 import slixmpp
 from slixmpp import JID
 from slixmpp.types import MessageTypes, OptJidStr
 from slixmpp.roster import RosterItem
 from view.signed_menu import ChatMenu
 from view.chat_window import ChatWindow
+from aioconsole import ainput
 
 
 class Client(slixmpp.ClientXMPP):
@@ -26,14 +29,24 @@ class Client(slixmpp.ClientXMPP):
         self.send_presence(pshow="chat", pstatus="Connected")
         await self.get_roster()
         self.is_user_connected = True
-        chat = ChatMenu(self)
-        chat.run()
+        asyncio.create_task(self.start_gui())
 
+
+    async def start_gui(self):
+        self.send_msg('gon21438-test42@alumchat.lol', 'aver')
+        await self.send_dm()
+
+        # Async function that sends a DM.
+    async def send_dm(self):
+        chat_win = ChatWindow(self)
+        chat_win.run()
+        await chat_win.get_input()
 
     def set_recv_msg(self, recv_msg: callable):
         self.recv_msg = recv_msg
 
-
+    def send_msg(self, mto, msg):
+        self.send_message(mto=mto, mbody=msg, mtype='chat')
 
     async def receive_message(self, message):
         if message["type"] == "chat":
@@ -45,17 +58,12 @@ class Client(slixmpp.ClientXMPP):
                 "emitter": actual_name,
                 "body": message_body
             }
-            chat_window = ChatWindow()
-            chat_window.receive_message(msg_data)
 
             chat_window = ChatWindow(self)
             if not chat_window.is_running:
                 chat_window.run()
 
             chat_window.receive_message(msg_data)
-
-
-
 
     def get_contacts(self):
         contacts = []
@@ -76,7 +84,6 @@ class Client(slixmpp.ClientXMPP):
     def failed_auth(self):
         self.disconnect()
         raise ValueError
-
 
     def set_handlers(self):
         # Message event handler.

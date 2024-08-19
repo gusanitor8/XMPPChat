@@ -1,5 +1,5 @@
 import tkinter as tk
-
+import asyncio
 
 class ChatWindow:
     _instance = None
@@ -16,16 +16,22 @@ class ChatWindow:
             self.chat_display = None
             self.message_entry = None
             self.contact_var = tk.StringVar(self.root)
-            self.contacts = client.get_contacts()
+            self.contacts = ['gon21438-test42@alumchat.lol']
             self.client = client
             self.initialize_items()
             self._initialized = True
             self.is_running = False
+            self.loop = asyncio.get_event_loop()
 
     def run(self):
         # Run the application
-        self.root.mainloop()
+        asyncio.ensure_future(self.run_tk())  # Run the Tkinter event loop in asyncio
         self.is_running = True
+
+    async def run_tk(self):
+        while self.is_running:
+            self.root.update()
+            await asyncio.sleep(0.01)  # Yield control to the asyncio event loop
 
     def receive_message(self, msg_data):
         message = msg_data['body']
@@ -50,7 +56,7 @@ class ChatWindow:
             self.message_entry.delete(0, tk.END)
 
             # We send the message
-            self.client.send_message(mto=selected_contact, mbody=message, mtype="chat")
+            self.client.send_msg(mto=selected_contact, msg=message)
 
     def get_entry(self) -> str:
         return self.message_entry.get()
@@ -82,6 +88,20 @@ class ChatWindow:
         # Create the send button
         send_button = tk.Button(bottom_frame, text="Send", command=self.send_message)
         send_button.pack(side=tk.RIGHT)
+
+    async def get_input(self):
+        """Awaitable function to get input from the user."""
+        self.future = self.loop.create_future()
+        self.root.bind("<Return>", self.on_enter_pressed)  # Bind Enter key to capture input
+        result = await self.future
+        self.future = None
+        return result
+
+    def on_enter_pressed(self, event):
+        """Handler for the Enter key press."""
+        if self.future and not self.future.done():
+            self.future.set_result(self.message_entry.get())
+            self.message_entry.delete(0, tk.END)  # Clear the entry after submission
 
     def on_closing(self):
         self.is_running = False
