@@ -2,11 +2,12 @@ const { client, xml } = require("@xmpp/client");
 const debug = require("@xmpp/debug");
 
 const xmpp = client({
-  service: "ws://localhost:5280/xmpp-websocket",
-  domain: "alumnchat.lol",
-  resource: "example",
-  username: "gon21438-test@uvg.edu.gt",
-  password: "12345",
+  service: "xmpp://alumchat.lol:5222/",
+  domain: "alumchat.lol",
+  resource: "",
+  username: "gon21438-test4@alumchat.lol",
+  password: "21438",
+  tls: false
 });
 
 debug(xmpp, true);
