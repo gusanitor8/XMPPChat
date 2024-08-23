@@ -1,13 +1,10 @@
+from slixmpp.roster import RosterItem
+from view.chat_window import ChatWindow
 from typing import Optional
-
+from tkinter import messagebox
 import asyncio
 import slixmpp
-from slixmpp import JID
-from slixmpp.types import MessageTypes, OptJidStr
-from slixmpp.roster import RosterItem
-from view.signed_menu import ChatMenu
-from view.chat_window import ChatWindow
-from aioconsole import ainput
+import base64
 
 
 class Client(slixmpp.ClientXMPP):
@@ -24,19 +21,27 @@ class Client(slixmpp.ClientXMPP):
             super().__init__(jid=jid, password=password)
             self._initialized = True
             self.set_handlers()
+            self._register_plugins()
+            print("done")
+
+    def _register_plugins(self):
+        # Register plugins for file transfer
+        self.register_plugin('xep_0030')  # Service Discovery
+        self.register_plugin('xep_0065')  # SOCKS5 Bytestreams
+        self.register_plugin('xep_0095')  # Stream Initiation
+        self.register_plugin('xep_0096')  # SI File Transfer
+        self.register_plugin('xep_0004')
 
     async def start(self, event):
         self.send_presence(pshow="chat", pstatus="Connected")
         await self.get_roster()
         self.is_user_connected = True
-        asyncio.create_task(self.start_gui())
-
+        await asyncio.create_task(self.start_gui())
 
     async def start_gui(self):
-        self.send_msg('gon21438-test42@alumchat.lol', 'aver')
         await self.send_dm()
 
-        # Async function that sends a DM.
+    # Async function that sends a DM.
     async def send_dm(self):
         chat_win = ChatWindow(self)
         chat_win.run()
@@ -48,16 +53,43 @@ class Client(slixmpp.ClientXMPP):
     def send_msg(self, mto, msg):
         self.send_message(mto=mto, mbody=msg, mtype='chat')
 
+    async def send_file(self, mto, file_path):
+        # Splitting the file path to get the extension.
+        file_name = file_path.split("/")[-1]
+
+        file = open(file_path, "rb")
+        file_data = file.read()
+
+        # Sending the encoded file.
+        file_encoded_data = base64.b64encode(file_data).decode()
+        await self.send_message(mto=mto, mbody=f"file://{file_name}://{file_encoded_data}", mtype="chat")
+
     async def receive_message(self, message):
         if message["type"] == "chat":
+
             emitter = str(message["from"])
             actual_name = emitter.split("/")[0]
             message_body = message["body"]
 
-            msg_data = {
-                "emitter": actual_name,
-                "body": message_body
-            }
+            if (message_body.startswith("file://")):
+                file_content = message["body"].split("://")
+                file_name = file_content[1]
+                file_data = file_content[2]
+                decoded_file_data = base64.b64decode(file_data)
+                file_to_write = open(f"../files_recv/{file_name}", "wb")
+                file_to_write.write(decoded_file_data)
+
+                # data for the message to be displayed
+                msg_data = {
+                    "emitter": actual_name,
+                    "body": f"A file was sent by {actual_name}!"
+                }
+
+            else:
+                msg_data = {
+                    "emitter": actual_name,
+                    "body": message_body
+                }
 
             chat_window = ChatWindow(self)
             if not chat_window.is_running:
@@ -82,8 +114,8 @@ class Client(slixmpp.ClientXMPP):
         return None
 
     def failed_auth(self):
+        messagebox.showinfo("Alert", "Failed to Authenticate")
         self.disconnect()
-        raise ValueError
 
     def set_handlers(self):
         # Message event handler.

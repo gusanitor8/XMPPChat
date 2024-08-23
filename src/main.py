@@ -1,5 +1,3 @@
-from model.client import Client
-from view.chat_window import ChatWindow
 from view.main_view import XMPPChatInterface
 
 

@@ -30,7 +30,7 @@ class LoginForm:
 
         client = Client(email, password)
         client.connect(disable_starttls=True, use_ssl=False)
-        client.process(forever=False)
+        client.process(forever=False, timeout=10)
 
     def get_email(self) -> str:
         return self.email_entry.get()
@@ -40,7 +40,7 @@ class LoginForm:
 
     def initialize_items(self):
         # Create the main window
-        self.root.geometry("300x150")  # Set the fixed size of the window
+        self.root.geometry("400x150")  # Set the fixed size of the window
         self.root.resizable(False, False)  # Disable resizing
 
         # Create a frame for the email and password fields
