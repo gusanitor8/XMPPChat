@@ -3,6 +3,9 @@ import asyncio
 import os
 from tkinter import filedialog
 from tkinter import messagebox
+from view.group_form import GroupForm
+from view.groupchat_selector import GroupChatSelector
+from view.add_contact import AddContact
 
 
 class ChatWindow:
@@ -19,6 +22,7 @@ class ChatWindow:
             self.root.title = "XMPP Chat Window"
             self.chat_display = None
             self.message_entry = None
+            self.contact_menu = None
             self.contact_var = tk.StringVar(self.root)
             self.contacts = [""] + client.get_contacts()
             self.client = client
@@ -26,6 +30,28 @@ class ChatWindow:
             self._initialized = True
             self.is_running = False
             self.loop = asyncio.get_event_loop()
+            asyncio.create_task(self.initialize_contacts_and_groups())
+
+    async def initialize_contacts_and_groups(self):
+        # We add the groups we are in to the contact list
+        groups = await self.client.get_joined_groups()
+        self.contacts += groups
+        self.update_dropdown()
+
+    def update_dropdown(self):
+        # Clear the old menu items
+        self.contact_menu['menu'].delete(0, 'end')
+
+        # Add new menu items
+        for contact in self.contacts:
+            self.contact_menu['menu'].add_command(label=contact, command=tk._setit(self.contact_var, contact))
+
+        # Optionally, you can set the default value to the first contact in the updated list
+        self.contact_var.set(self.contacts[0])
+
+    def add_contact(self, new_contact):
+        self.contacts.append(new_contact)
+        self.update_dropdown()
 
     def run(self):
         # Run the application
@@ -61,8 +87,38 @@ class ChatWindow:
             # We send the message
             self.client.send_msg(mto=selected_contact, msg=message)
 
+    def create_group(self):
+        group_form = GroupForm(self.root, self.client)
+        group_form.initialize()
+
     def get_entry(self) -> str:
         return self.message_entry.get()
+
+    def handle_option(self, option):
+        # Implement functionality for each option as needed
+        if option == 0:
+            contacts = self.client.get_contacts()
+            print(contacts)
+
+        if option == 1:
+            contact = self.contact_var.get()
+            details = self.client.get_contact_details(contact)
+
+            if details:
+                print(details)
+
+        elif option == 2:
+            contact_form = AddContact(self.client, self)
+            contact_form.initialize()
+
+        elif option == 3:
+            GroupChatSelector(self.client, self)
+
+        elif option == 4:
+            self.create_group()
+
+        elif option == 6:
+            self.sign_out()
 
     def initialize_items(self):
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -77,14 +133,13 @@ class ChatWindow:
 
         # Create the options in the menu
         options = [
-            "Show all my contacts.",  # check
-            "Show a contact info.",
-            "Send contact request.",
-            "Send a DM.",
-            "Send a group message.",
-            "Update your presence.",
-            "Send a file message.",
-            "Sign out."
+            "Show all my contacts.",  # 0
+            "Show a contact info.",  # 1
+            "Send contact request.",  # 2
+            "Join a Group",  # 3
+            "Create a Group",  # 4
+            "Update your presence.",  # 5
+            "Sign out."  # 6
         ]
 
         for index, option in enumerate(options):
@@ -97,8 +152,8 @@ class ChatWindow:
 
         # Create a dropdown menu for selecting a contact
         self.contact_var.set(self.contacts[0])  # Set the default contact
-        contact_menu = tk.OptionMenu(chat_frame, self.contact_var, *self.contacts)
-        contact_menu.pack(pady=10)
+        self.contact_menu = tk.OptionMenu(chat_frame, self.contact_var, *self.contacts)
+        self.contact_menu.pack(pady=10)
 
         # Create the chat display area
         self.chat_display = tk.Text(chat_frame, state=tk.DISABLED, wrap=tk.WORD)
@@ -161,28 +216,6 @@ class ChatWindow:
         os.system("""
                   osascript -e 'display notification "{}" with title "{}"'
                   """.format(text, title))
-
-
-
-    def handle_option(self, option):
-        # Implement functionality for each option as needed
-        if option == 0:
-            contacts = self.client.get_contacts()
-            print(contacts)
-
-        if option == 1:
-            contact = self.contact_var.get()
-            details = self.client.get_contact_details(contact)
-
-            if details:
-                print(details)
-
-        elif option == 3:
-            # Example: Open the chat window when "Send a DM" is selected
-            self.run()
-
-        elif option == 7:
-            self.sign_out()
 
     def sign_out(self):
         self.is_running = False

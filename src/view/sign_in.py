@@ -26,8 +26,6 @@ class LoginForm:
             messagebox.showwarning("Input Error", "Please fill in both fields")
             return
 
-        # TODO: here we must add the credential validation
-
         client = Client(email, password)
         client.connect(disable_starttls=True, use_ssl=False)
         client.process(forever=False, timeout=10)
