@@ -1,5 +1,7 @@
 import tkinter as tk
 from view.sign_in import LoginForm
+from view.DeleteAcc import open_delete_account_window
+from view.CreateAcc import CreateAccountWindow
 
 
 class XMPPChatInterface:
@@ -13,7 +15,7 @@ class XMPPChatInterface:
         self.root.mainloop()
 
     def sign_up(self):
-        pass
+        CreateAccountWindow()
 
     def sign_in(self):
         login_form = LoginForm()
@@ -23,7 +25,7 @@ class XMPPChatInterface:
         print("Close XMPP Chat.")
 
     def delete_account(self):
-        print("Delete account on XMPP Chat.")
+        open_delete_account_window()
 
     def initialize_items(self):
         # Create buttons
