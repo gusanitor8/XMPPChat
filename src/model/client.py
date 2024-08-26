@@ -1,6 +1,6 @@
 from slixmpp.roster import RosterItem
 from view.chat_window import ChatWindow
-from model.services import MUC_SERVICE
+from model.services import MUC_SERVICE, AV_STATES
 from slixmpp.exceptions import IqError, IqTimeout
 from typing import Optional
 from tkinter import messagebox
@@ -21,11 +21,14 @@ class Client(slixmpp.ClientXMPP):
     def __init__(self, jid, password):
         if not hasattr(self, '_initialized'):  # To ensure __init__ is not called multiple times
             super().__init__(jid=jid, password=password)
-            self.chat_window = ChatWindow()
+            self.chat_window = None
             self._initialized = True
             self.set_handlers()
             self._register_plugins()
             print("done")
+
+    def set_chat_window(self, chat_window):
+        self.chat_window = chat_window
 
     def _register_plugins(self):
         # Register plugins for file transfer
@@ -209,9 +212,18 @@ class Client(slixmpp.ClientXMPP):
         messagebox.showinfo("Alert", "Failed to Authenticate")
         self.disconnect()
 
+    def on_roster_update(self, event):
+        if self.chat_window:
+            self.chat_window.update_dropdown()
+
+    def update_presence(self, show, status):
+        if show in AV_STATES:
+            self.send_presence(pshow=show, pstatus=status)
+            messagebox.showinfo("Alert", "Presence and status where changed")
+
     def set_handlers(self):
         # Message event handler.
         self.add_event_handler("message", self.receive_message)
         self.add_event_handler("failed_auth", self.failed_auth)
         self.add_event_handler("session_start", self.start)
-
+        self.add_event_handler("roster_update", self.on_roster_update)
