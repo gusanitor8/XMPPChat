@@ -1,7 +1,7 @@
 # Simple XMPP Chat
 
 ## Link for Remote Repository
-[remote repo](https://github.com/gusanitor8/XMPPChat)
+[remote repo](https://github.com/gusanitor8/XMPPChat/tree/python)
 
 ## Run Instructions
 * In order to run this project you must use `Python 3.11.9` and install the 
