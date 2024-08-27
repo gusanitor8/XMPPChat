@@ -46,6 +46,11 @@ class ChatWindow:
         # Clear the old menu items
         self.contact_menu['menu'].delete(0, 'end')
 
+        new_contacts = self.client.get_contacts()
+        new_contacts += self.contacts
+        new_contacts = list(set(new_contacts))
+        self.contacts = new_contacts
+
         # Add new menu items
         for contact in self.contacts:
             self.contact_menu['menu'].add_command(label=contact, command=tk._setit(self.contact_var, contact))
