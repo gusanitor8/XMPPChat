@@ -11,12 +11,19 @@ class Delete(slixmpp.ClientXMPP):
         self.add_event_handler("session_start", self.start)
 
     async def start(self, event):
+        """
+        This function is called upon the start of the session
+        """
         self.send_presence()
         await self.get_roster()
         await self.delete_account()
         self.disconnect()
 
     async def delete_account(self):
+        """
+        This method deletes the specified account
+        """
+
         # Response from the server.
         response = self.Iq()
         response["from"] = self.boundjid.user

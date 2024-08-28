@@ -14,6 +14,9 @@ class Client(slixmpp.ClientXMPP):
 
     # We implement the singleton design pattern
     def __new__(cls, *args, **kwargs):
+        """
+        We implement the singleton design pattern
+        """
         if cls._instance is None:
             cls._instance = super(Client, cls).__new__(cls)
         return cls._instance
@@ -28,21 +31,35 @@ class Client(slixmpp.ClientXMPP):
             print("done")
 
     def set_chat_window(self, chat_window):
+        """
+        This function assigns the chat window instance to the client instance
+        :param chat_window: ChatWindow Instance
+        """
         self.chat_window = chat_window
 
     def _register_plugins(self):
+        """
+        We register useful plugins for the client
+        :return:
+        """
         # Register plugins for file transfer
         self.register_plugin('xep_0004')
         self.register_plugin('xep_0045')
 
     async def start(self, event):
+        """
+        This function is triggered when the session begins
+        :param event:
+        """
         self.send_presence(pshow="chat", pstatus="Connected")
         await self.get_roster()
         self.is_user_connected = True
         await asyncio.create_task(self.start_gui())
 
     def add_contact(self, jid):
-        """Send a contact request (presence subscription) to the specified JID."""
+        """
+        Send a contact request (presence subscription) to the specified JID.
+        """
         try:
             self.send_presence(ptype='subscribe', pto=jid)
             messagebox.showinfo("Alert", "Contact added succesfully")
@@ -51,9 +68,14 @@ class Client(slixmpp.ClientXMPP):
             print(e)
 
     async def start_gui(self):
+        """This function triggers a function to show the GUI"""
         await self.send_dm()
 
     async def create_group(self, group_name: str):
+        """
+        Method to create a MUC
+        :param group_name: name of the MUC
+        """
         try:
             # Join the room (this will create it if it doesn't exist)
             await self.plugin["xep_0045"].join_muc(group_name, self.boundjid.user)
@@ -91,6 +113,10 @@ class Client(slixmpp.ClientXMPP):
             messagebox.showinfo("Alert", "Timeout while creating group")
 
     async def join_group(self, group_name):
+        """
+        Method to join a MUC
+        :param group_name: the name of the MUC
+        """
         # Method to join the group.
         try:
             await self.plugin["xep_0045"].join_muc(room=group_name, nick=self.boundjid.user)
@@ -99,6 +125,10 @@ class Client(slixmpp.ClientXMPP):
             messagebox.showinfo("Alert", "Couldn't join group")
 
     async def get_joined_groups(self):
+        """
+        This method returns a list of the groups we are currently suscribed to
+        :return: a list of strings
+        """
         try:
             # Get the list of joined rooms
             iq = self.Iq()
@@ -120,6 +150,10 @@ class Client(slixmpp.ClientXMPP):
             return []
 
     async def get_all_groups(self):
+        """
+        This fucntion returns a list of al the groupchats in the server
+        :return: list of str
+        """
         try:
             # Get the list of joined rooms
             iq = self.Iq()
@@ -139,14 +173,27 @@ class Client(slixmpp.ClientXMPP):
 
     # Async function that sends a DM.
     async def send_dm(self):
+        """
+        This function triggers the GUI
+        :return:
+        """
         chat_win = ChatWindow(self)
         chat_win.run()
         await chat_win.get_input()
 
     def set_recv_msg(self, recv_msg: callable):
+        """
+        We assign a function to the classs to handle the reception of messages
+        :param recv_msg: function
+        """
         self.recv_msg = recv_msg
 
     def send_msg(self, mto: str, msg):
+        """
+        This method sendsa message to a reciever
+        :param mto: the reciever
+        :param msg: the message
+        """
         if mto.endswith(MUC_SERVICE):
             self.send_message(mto=mto, mbody=msg, mtype='groupchat')
             return
@@ -154,6 +201,11 @@ class Client(slixmpp.ClientXMPP):
         self.send_message(mto=mto, mbody=msg, mtype='chat')
 
     async def send_file(self, mto, file_path):
+        """
+        We use this method to send a file
+        :param mto: the reciever
+        :param file_path: the file path
+        """
         # Splitting the file path to get the extension.
         file_name = file_path.split("/")[-1]
 
@@ -165,6 +217,10 @@ class Client(slixmpp.ClientXMPP):
         await self.send_message(mto=mto, mbody=f"file://{file_name}://{file_encoded_data}", mtype="chat")
 
     async def receive_message(self, message):
+        """
+        This method handles the reception of a message
+        :param message: the message
+        """
         if message["type"] == "chat":
 
             emitter = str(message["from"])
@@ -198,30 +254,42 @@ class Client(slixmpp.ClientXMPP):
             chat_window.receive_message(msg_data)
 
     def get_contacts(self):
+        """This function returns all the contacts of the user"""
         contacts = []
         for jid in self.client_roster:
             contacts.append(jid)
         return contacts
 
     def get_contact_details(self, jid: str) -> Optional[RosterItem]:
+        """This function returns the details of a specific contact"""
         if jid in self.client_roster:
             return self.client_roster[jid]
         return None
 
     def failed_auth(self):
+        """This function is triggered when the auth is failed"""
         messagebox.showinfo("Alert", "Failed to Authenticate")
         self.disconnect()
 
     def on_roster_update(self, event):
+        """This function is triggered when there is any update on the roster"""
         if self.chat_window:
             self.chat_window.update_dropdown()
 
     def update_presence(self, show, status):
+        """
+        This fucntion updates the user's presence
+        :param show: available, dnd, xa, awag
+        :param status: a message from the user
+        """
         if show in AV_STATES:
             self.send_presence(pshow=show, pstatus=status)
             messagebox.showinfo("Alert", "Presence and status where changed")
 
     def set_handlers(self):
+        """
+        we define the event handlers for the client
+        """
         # Message event handler.
         self.add_event_handler("message", self.receive_message)
         self.add_event_handler("failed_auth", self.failed_auth)

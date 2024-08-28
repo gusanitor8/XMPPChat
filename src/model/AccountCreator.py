@@ -2,7 +2,12 @@ import xmpp
 
 
 def register_new_user(jid, password):
-    # Connecting to the server.
+    """
+    This function registers a new user for us
+    :param jid: the user we want to create with the domain of the server included
+    :param password: the password for the jid
+    :return:
+    """
     xmpp_jid = xmpp.JID(jid)
     xmpp_account = xmpp.Client(xmpp_jid.getDomain(), debug=[])
     xmpp_account.connect()
